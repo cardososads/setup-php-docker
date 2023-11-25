@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./public:/var/www
+      - ./docker/nginx/:/etc/nginx/conf.d/
+    networks:
+      - php-pro
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - .:/var/www/
+    depends_on:
+      - redis
+    networks:
+      - php-pro
+
+  db:
+    image: mysql:5.7.22
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: phpro
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./.docker/mysql/dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - php-pro
+
+  # redis
+  redis:
+    image: redis:latest
+    networks:
+      - php-pro
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    networks:
+      - php-pro
+
+networks:
+  php-pro:
+    driver: bridge
